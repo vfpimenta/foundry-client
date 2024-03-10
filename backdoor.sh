@@ -27,7 +27,23 @@ function header () {
     echo -e "Unauthorized access will be fully investigated and reported to the appropriate law enforcement agencies.\n\n"
 }
 
-echo -e "Enter a command: \n"
+function help () {
+    echo -e "Foundry backdoor client utility\n"
+    echo "help                  Display this message"
+    echo "login [HOSTNAME]      Login into server (requires username and password)"
+    echo "exit                  Exit utility"
+}
+
+function help_auth () {
+    echo -e "Foundry server utility\n"
+    echo "help                  Display this message"
+    echo "list                  List documents in server"
+    echo "get   [DOCUMENT]      Downloads document from server"
+    echo "open  [DOCUMENT]      Print the document contents"
+    echo "exit                  Logout of server"
+}
+
+echo -e "Enter a command or enter help to get a list of commands: \n"
 
 exit_cmd=0
 while [[ "${exit_cmd}" != 1 ]]; do
@@ -36,7 +52,11 @@ while [[ "${exit_cmd}" != 1 ]]; do
 
     case $input in
         'help')
-            echo "No help"
+            if [ -z "${AUTH_USERNAME}" ] | [ -z "${AUTH_HOSTNAME}" ]; then
+                help
+            else
+                help_auth
+            fi
             ;;
         'login')
             if [ "$(echo "$args" | awk '{print NF}')" -eq 0 ]; then
@@ -78,7 +98,8 @@ while [[ "${exit_cmd}" != 1 ]]; do
             AUTH_HOSTNAME=$hostname
             header
 
-            echo -e "Logged in $hostname \n"
+            echo "Access granted to $hostname"
+            echo -e "Enter a command or enter help to get a list of commands: \n"
             ;;
         'exit')
             if [ -z "${AUTH_USERNAME}" ] | [ -z "${AUTH_HOSTNAME}" ]; then
