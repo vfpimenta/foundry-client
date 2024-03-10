@@ -2,14 +2,14 @@
 
 # SERVER_URL="http://foundry-server-navy.vercel.app"
 SERVER_URL="localhost:3000"
+AUTH_USERNAME=""
+AUTH_HOSTNAME=""
 
 function ps1 () {
-    if [ $# -eq 0 ]; then
+    if [ -z "${AUTH_USERNAME}" ] | [ -z "${AUTH_HOSTNAME}" ]; then
         echo ">"
     else
-        local username=$1
-        local hostname=$2
-        echo "[${username}@${hostname}]"
+        echo "[${AUTH_USERNAME}@${AUTH_HOSTNAME}]"
     fi
 }
 
@@ -59,6 +59,8 @@ while [[ "${input}" != "exit" ]]; do
                 continue
             fi
             echo -e "\nLogin step completed!"
+            AUTH_USERNAME=$username
+            AUTH_HOSTNAME=$hostname
             ;;
         '*')
             echo "Error: Unknown command $input"
