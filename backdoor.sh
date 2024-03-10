@@ -108,6 +108,8 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 # Logout
                 AUTH_USERNAME=""
                 AUTH_HOSTNAME=""
+
+                response=$(curl -L -s --header "Content-Type: application/json" --request POST --data "{\"username\":\"${username}\"}" --url ${SERVER_URL}/server/${hostname}/logout)
                 echo "Logout"
             fi
             ;;
