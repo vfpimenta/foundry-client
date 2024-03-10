@@ -15,8 +15,8 @@ function ps1 () {
 
 echo -e "Enter a command: \n"
 
-input="none"
-while [[ "${input}" != "exit" ]]; do
+exit_cmd=0
+while [[ "${exit_cmd}" != 1 ]]; do
     echo -n "$(ps1) "
     read -r input args
 
@@ -62,7 +62,16 @@ while [[ "${input}" != "exit" ]]; do
             AUTH_USERNAME=$username
             AUTH_HOSTNAME=$hostname
             ;;
-        '*')
+        'exit')
+            if [ -z "${AUTH_USERNAME}" ] | [ -z "${AUTH_HOSTNAME}" ]; then
+                exit_cmd=1
+            else
+                # Logout
+                AUTH_USERNAME=""
+                AUTH_HOSTNAME=""
+            fi
+            ;;
+        *)
             echo "Error: Unknown command $input"
             ;;
     esac
