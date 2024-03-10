@@ -13,6 +13,20 @@ function ps1 () {
     fi
 }
 
+function header () {
+    echo "###############################################"
+    echo "#  _____ _____ _____ _____ ____  _____ __ __  #"
+    echo "# |   __|     |  |  |   | |    \| __  |  |  | #"
+    echo "# |   __|  |  |  |  | | | |  |  |    -|_   _| #"
+    echo "# |__|  |_____|_____|_|___|____/|__|__| |_|   #"
+    echo "#                                             #"
+    echo "###############################################"
+    echo -e "\n"
+    echo "You are entering into a secured area! Your IP, Login Time, Username has been noted and has been sent to the server administrator!"
+    echo "This service is restricted to authorized users only. All activities on this system are logged."
+    echo -e "Unauthorized access will be fully investigated and reported to the appropriate law enforcement agencies.\n\n"
+}
+
 echo -e "Enter a command: \n"
 
 exit_cmd=0
@@ -44,6 +58,7 @@ while [[ "${exit_cmd}" != 1 ]]; do
             read -r username
             echo -n "password: "
             read -s password
+            echo ""
             status_code=$(curl -s -o /dev/null -w "%{http_code}" --header "Content-Type: application/json" --request POST --data "{\"username\":\"${username}\",\"password\":\"${password}\"}" --url "${SERVER_URL}/auth")
             response=$(curl -L -s --header "Content-Type: application/json" --request POST --data "{\"username\":\"${username}\",\"password\":\"${password}\"}" --url "${SERVER_URL}/auth")
             if [ "$status_code" -ne "200" ]; then
@@ -58,9 +73,12 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 echo -e "\nError $response"
                 continue
             fi
-            echo -e "\nLogin step completed!"
+
             AUTH_USERNAME=$username
             AUTH_HOSTNAME=$hostname
+            header
+
+            echo -e "Logged in $hostname \n"
             ;;
         'exit')
             if [ -z "${AUTH_USERNAME}" ] | [ -z "${AUTH_HOSTNAME}" ]; then
@@ -69,6 +87,7 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 # Logout
                 AUTH_USERNAME=""
                 AUTH_HOSTNAME=""
+                echo "Logout"
             fi
             ;;
         *)
