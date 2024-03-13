@@ -1,0 +1,18 @@
+From: no-reply@foundry-digital.org
+To: [15 recipients]
+Subject: [FDT-2039] Forgot password bug
+
+Thank you for taking the time to report the issue you encountered while using our platform. Your feedback is invaluable to us as we strive to provide the best possible user experience.
+
+We have received your bug report regarding <Forgot password bug>, and our development team is currently investigating the matter. The detailed description you provided states:
+
+> When using the 'forgot password' option for a user without an email (such as guest) the feature crashes.
+> It also displays the contents of the email as part of the error response (sample below).
+> 
+> Error: Failed sending email to undefined
+> ...
+> Your password has been reset, use the password '[REDACTED]' to login
+
+Thank you for your support and cooperation.
+
+- Foundry Digital Technology team

@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# curl -L -s \
-#     --header "Content-Type: application/json" \
-#     --header "Authorization: Bearer 6c979cda-0042-4a38-bd60-be0c9da3b332" \
-#     -o "maifest.json"\
-#     --request GET --url "http://localhost:3000/server/eu-west.foundry-dev.org/document/5dd0221c-a777-4ca7-8b4f-c84d23739a27"
-
 # SERVER_URL="http://foundry-server-navy.vercel.app"
 SERVER_URL="localhost:3000"
 AUTH_USERNAME=""
@@ -28,30 +22,17 @@ function ps1 () {
     fi
 }
 
-function header () {
-    echo "###############################################"
-    echo "#  _____ _____ _____ _____ ____  _____ __ __  #"
-    echo "# |   __|     |  |  |   | |    \| __  |  |  | #"
-    echo "# |   __|  |  |  |  | | | |  |  |    -|_   _| #"
-    echo "# |__|  |_____|_____|_|___|____/|__|__| |_|   #"
-    echo "#                                             #"
-    echo "###############################################"
-    echo -e "\n"
-    echo "You are entering into a secured area! Your IP, Login Time, Username has been noted and has been sent to the server administrator!"
-    echo "This service is restricted to authorized users only. All activities on this system are logged."
-    echo -e "Unauthorized access will be fully investigated and reported to the appropriate law enforcement agencies.\n\n"
-}
-
 function help () {
-    echo -e "Foundry backdoor client utility\n"
+    echo -e "Foundry backdoor client\n"
     echo "help                  Display this message"
     echo "list                  List the available servers"
     echo "login [HOSTNAME]      Login into server (requires username and password)"
+    echo "reset-password        Resets the password of a user"
     echo "exit                  Exit utility"
 }
 
 function help_auth () {
-    echo -e "Foundry server utility\n"
+    echo -e "Foundry server\n"
     echo "help                  Display this message"
     echo "list                  List documents in server"
     echo "open  [DOCUMENT]      Print the document contents"
@@ -61,8 +42,12 @@ function help_auth () {
 function validate_request () {
     local status_code=$(curl -s -o /dev/null -w "%{http_code}" "$@")
     if [ "$status_code" -ne "200" ]; then
-        local response=$(curl -L -s "$@")
-        echo -e "\nError: $(echo $response | jq -r '.error')"
+        if [ "$status_code" -eq "000" ]; then
+            echo "Error: remote server is unavailable!"
+        else
+            local response=$(curl -L -s "$@")
+            echo -e "\nError: $(echo $response | jq -r '.error')"
+        fi
         return 1
     else
         return 0
@@ -112,9 +97,9 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 AUTH_USERNAME=$username
                 AUTH_HOSTNAME=$hostname
                 AUTH_TOKEN=$(echo $response | jq -r '.authToken')
-                header
+                curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/document/motd"
 
-                echo "Access granted to $hostname"
+                echo -e "\n\nAccess granted to $hostname"
                 echo -e "Enter a command or enter help to get a list of commands: \n"
             fi
             ;;
@@ -122,7 +107,7 @@ while [[ "${exit_cmd}" != 1 ]]; do
             if $(is_logged); then
                 # Fetch documents
                 validate_request --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/documents" || continue
-                echo $(curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url ${SERVER_URL}/server/${AUTH_HOSTNAME}/documents) | jq -r '.documents[].name'
+                echo $(curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url ${SERVER_URL}/server/${AUTH_HOSTNAME}/documents) | jq -r '.documents[]'
             else
                 # Fetch servers
                 validate_request --request GET --url "${SERVER_URL}/servers" || continue
@@ -141,6 +126,28 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/document/${document_name}" | less
             else
                 echo "Error: Unknown command $input"
+            fi
+            ;;
+        'reset-password')
+            if $(is_logged); then
+                echo "Error: Unknown command $input"
+            else
+                # Auth user
+                echo -n "username: "
+                read -r username
+
+                response=$(curl -L -s --request POST --url ${SERVER_URL}/user/${username}/forgot-password)
+                if [ $(echo $response | jq 'has("result")') == 'true' ]; then
+                    echo $response | jq -r '.result'
+                else
+                    echo $response | jq -r
+                fi
+
+                echo -n "reset code: "
+                read -r reset_code
+                echo -n "new password: "
+                read -s password
+                echo ""
             fi
             ;;
         'exit')
