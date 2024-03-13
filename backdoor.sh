@@ -72,6 +72,7 @@ while [[ "${exit_cmd}" != 1 ]]; do
         'login')
             if $(is_logged); then
                 echo "Error: Unknown command $input"
+                help_auth
             else
                 if [ "$(echo "$args" | awk '{print NF}')" -eq 0 ]; then
                     echo "Error: No arguments provided for $input command"
@@ -126,11 +127,13 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/document/${document_name}" | less
             else
                 echo "Error: Unknown command $input"
+                help
             fi
             ;;
         'reset-password')
             if $(is_logged); then
                 echo "Error: Unknown command $input"
+                help_auth
             else
                 # Auth user
                 echo -n "username: "
@@ -140,7 +143,9 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 if [ $(echo $response | jq 'has("result")') == 'true' ]; then
                     echo $response | jq -r '.result'
                 else
-                    echo $response | jq -r
+                    echo $response | jq -r '.error'
+                    echo $response | jq -r '.stacktrace'
+                    echo $response | jq -r '.params.body'
                 fi
 
                 echo -n "reset code: "
@@ -148,6 +153,13 @@ while [[ "${exit_cmd}" != 1 ]]; do
                 echo -n "new password: "
                 read -s password
                 echo ""
+
+                response=$(curl -L -s --header "Content-Type: application/json" --request POST --data "{\"code\":\"${reset_code}\", \"password\":\"${password}\"}" --url ${SERVER_URL}/user/${username}/reset-password)
+                if [ $(echo $response | jq 'has("error")') == 'true' ]; then
+                    echo $response | jq -r '.error'
+                else
+                    echo "Successfully reset password for ${username}"
+                fi
             fi
             ;;
         'exit')
@@ -165,6 +177,11 @@ while [[ "${exit_cmd}" != 1 ]]; do
             ;;
         *)
             echo "Error: Unknown command $input"
+            if $(is_logged); then
+                help_auth
+            else
+                help
+            fi
             ;;
     esac
 done
