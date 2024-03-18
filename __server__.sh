@@ -14,6 +14,11 @@ function server_help () {
 curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/document/motd"
 
 echo -e "\n\nAccess granted to $hostname"
+response=$(curl -L -s --request GET --url "${SERVER_URL}/user/${AUTH_USERNAME}/messages")
+if [ $(echo $response | jq 'has("total_messages")') == 'true' ]; then
+    unread_messages=$(echo $response | jq -r '.total_messages')
+    echo -e "*** YOU HAVE ${unread_messages} UNREAD MESSAGE(S) ***"
+fi
 echo -e "Enter a command or enter help to get a list of commands: \n"
 
 server_exit_cmd=0
