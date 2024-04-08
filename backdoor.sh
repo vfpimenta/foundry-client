@@ -12,23 +12,21 @@ function help () {
     echo "help                  Display this message"
     echo "list                  List the available servers"
     echo "login [HOSTNAME]      Login into server (requires username and password)"
-    echo "reset-password        Resets the password of a user"
+    echo "reset [USERNAME]      Resets the password of a user"
     echo "exit                  Exit utility"
 }
 
 function validate_request () {
     local status_code=$(curl -s -o /dev/null -w "%{http_code}" "$@")
-    if [ "$status_code" -ne "200" ]; then
-        if [ "$status_code" -eq "000" ]; then
-            echo "Error: remote server is unavailable!"
-        else
-            local response=$(curl -L -s "$@")
-            echo -e "\nError: $(echo $response | jq -r '.error')"
-        fi
-        return 1
-    else
+    if [[ $status_code =~ ^2[0-9][0-9]$ ]]; then
         return 0
+    elif [ "$status_code" -eq "000" ]; then
+        echo "Error: remote server is unavailable!"
+    else
+        local response=$(curl -L -s "$@")
+        echo -e "\nError: $(echo $response | jq -r '.error')"
     fi
+    return 1
 }
 
 echo -e "Enter a command or enter help to get a list of commands: \n"
@@ -75,10 +73,15 @@ while [[ "${exit_cmd}" != 1 ]]; do
             validate_request --request GET --url "${SERVER_URL}/servers" || continue
             echo $(curl -L -s --request GET --url ${SERVER_URL}/servers) | jq -r '["HOSTNAME", "CLERANCE"], (.allServers[] | [.hostname, .level]) | @tsv' | column -t
             ;;
-        'reset-password')
-            # Auth user
-            echo -n "username: "
-            read -r username
+        'reset')
+            if [ "$(echo "$args" | awk '{print NF}')" -eq 0 ]; then
+                echo "Error: No arguments provided for $input command"
+                continue
+            fi
+            username=$(echo "$args" | awk '{print $1}')
+
+            # Check user exists
+            validate_request --request GET --url "${SERVER_URL}/user/${username}" || continue
 
             response=$(curl -L -s --request POST --url ${SERVER_URL}/user/${username}/forgot-password)
             if [ $(echo $response | jq 'has("result")') == 'true' ]; then
@@ -95,6 +98,7 @@ while [[ "${exit_cmd}" != 1 ]]; do
             read -s password
             echo ""
 
+            # Reset user
             response=$(curl -L -s --header "Content-Type: application/json" --request POST --data "{\"code\":\"${reset_code}\", \"password\":\"${password}\"}" --url ${SERVER_URL}/user/${username}/reset-password)
             if [ $(echo $response | jq 'has("error")') == 'true' ]; then
                 echo $response | jq -r '.error'

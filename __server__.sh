@@ -5,10 +5,27 @@ SERVER_PS1="[${AUTH_USERNAME}@${AUTH_HOSTNAME}]"
 function server_help () {
     echo -e "Foundry server\n"
     echo "help                  Display this message"
+    echo "status                Display the server status information"
     echo "list                  List documents in server"
     echo "open  [DOCUMENT]      Print the document contents"
     echo "interface             Initiate the interface utility"
     echo "exit                  Logout of server"
+}
+
+function print_status () {
+    hostname=$1
+    response=$2
+    echo "Hostname: ${hostname}"
+    echo "-----------------------"
+    echo "OS: $(echo $response | jq -r '.os')"
+    echo "Kernel: $(echo $response | jq -r '.kernel')"
+    echo "Uptime: $(echo $response | jq -r '.uptime')"
+    echo "Packages: $(echo $response | jq '.packages')"
+    echo "Shell: $(echo $response | jq -r '.shell')"
+    echo "CPU: $(echo $response | jq -r '.cpu')"
+    echo "Memory: $(echo $response | jq -r '.memory')"
+    echo "Disk: $(echo $response | jq -r '.disk')"
+    echo "Users: $(echo $response | jq '.users')"
 }
 
 curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/document/motd"
@@ -29,6 +46,10 @@ while [[ "${server_exit_cmd}" != 1 ]]; do
     case $server_input in
         'help')
             server_help
+            ;;
+        'status')
+            validate_request --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url "${SERVER_URL}/server/${AUTH_HOSTNAME}/status" || continue
+            print_status $AUTH_HOSTNAME "$(curl -L -s --header "Authorization: Bearer ${AUTH_TOKEN}" --request GET --url ${SERVER_URL}/server/${AUTH_HOSTNAME}/status)"
             ;;
         'list')
             # Fetch documents
